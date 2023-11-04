@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="JetClientState">
+    <option name="draftsState">
+      <draftsState>
+        <option name="requests">
+          <list>
+            <requestState>
+              <option name="id" value="1af996a9-2643-4aae-8953-6fce6dba14a1" />
+              <option name="method" value="GET" />
+              <option name="name" value="Draft" />
+              <option name="url" value="http://localhost:8080/hello" />
+            </requestState>
+            <requestState>
+              <option name="id" value="0c46a420-c768-4c57-b353-1a26d9e11385" />
+              <option name="method" value="GET" />
+              <option name="name" value="Draft 1" />
+            </requestState>
+          </list>
+        </option>
+      </draftsState>
+    </option>
+    <option name="environmentGroups">
+      <list>
+        <environmentGroupState>
+          <option name="environments">
+            <list>
+              <environmentState>
+                <option name="id" value="new_environment" />
+                <option name="name" value="New Environment" />
+              </environmentState>
+            </list>
+          </option>
+          <option name="id" value="new_group" />
+          <option name="name" value="New Group" />
+        </environmentGroupState>
+      </list>
+    </option>
+    <option name="id" value="49502204-582c-462f-a3dc-a95c7bb7cb70" />
+  </component>
+</project>
