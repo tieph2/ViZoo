@@ -12,20 +12,38 @@ use reqwest::{
     header::{HeaderMap, HeaderValue},
 };
 
-use csv;
+use csv::Reader;
+use rand::Rng;
+use select::document::Document;
+use select::predicate::Name;
 use std::error;
 use std::fs::File;
 use std::path::Path;
-use csv::Reader;
-use rand::Rng;
-use vi_zoo::AnimalQuery;
-
-
-
+use vi_zoo::{AnimalQuery, AnimalRecord};
 
 const ANIMAL_URL: &str = "https://api.api-ninjas.com/v1/animals?name=";
 const CAT_URL: &str = "https://catfact.ninja/fact";
 const API_KEY : &str = "LX8eq5FkHB438N3K7ukLCw==DQTKEHV5lLP5rVtO";
+
+// fn fetch_image_url(search_query: &str) -> Result<String, reqwest::Error> {
+//     let client = Client::new();
+//     let search_url = format!("https://www.google.com/search?tbm=isch&q={}", search_query);
+//
+//     let response = client.get(&search_url).send();
+//     let body = response.text();
+//
+//     let document = Document::from(body.as_str());
+//     let img_element = document.find(Name("img")).next();
+//
+//     if let Some(img) = img_element {
+//         if let Some(img_url) = img.attr("src") {
+//             return Ok(img_url.to_string());
+//         }
+//     }
+//
+//     Err(Error)
+// }
+
 
 /// Simple function to test server
 pub async fn handler_hello() -> impl IntoResponse {
@@ -33,7 +51,28 @@ pub async fn handler_hello() -> impl IntoResponse {
     Html("Hello <strong> World!!!</strong>")
 }
 
-fn read_random_record(file_path: &str) -> Result<csv::StringRecord, Box<dyn std::error::Error>> {
+///This function calls the Random Cat API (for testing purpose)
+pub async fn handler_rand_cat() -> Result<String, StatusCode> {
+
+    let client = reqwest::Client::new();
+
+
+    // Replace the URL below with the actual endpoint you want to call
+    let response = client
+        .get(CAT_URL)
+        .send()
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let body = response
+        .text()
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(body)
+}
+
+async fn read_random_record(file_path: &str) -> Result<csv::StringRecord, Box<dyn std::error::Error>> {
     println!("Is this even being called at all?");
 
 
@@ -70,44 +109,10 @@ fn read_random_record(file_path: &str) -> Result<csv::StringRecord, Box<dyn std:
     Ok(records[random_index].clone()) // Cloning the record to return it
 }
 
-///This function calls the Animal API to get a random animal
-pub async fn handler_random() -> Result<String, StatusCode> {
-
-    if let Ok(record) = read_random_record("./src/data/animals.csv") {
-        println!("{:?}", record);
-    } else {
-        eprintln!("Error reading CSV file");
-    }
-
-    // let random_animal = read_random_record("./data/animals.csv").unwrap();
-    // println!("{:?}", random_animal);
-
-    let client = reqwest::Client::new();
 
 
-    // Replace the URL below with the actual endpoint you want to call
-    let response = client
-        .get(CAT_URL)
-        .send()
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-
-    let body = response
-        .text()
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-
-    Ok(body)
-}
-
-/// This function takes a name of an animal in the Json request and
-/// call the Anial API to get information about that animal
-pub async fn handler_search(Json(body): Json<AnimalQuery>) -> Result<String, StatusCode> {
-    // Perform a search operation based on the provided animal name
-    // For demonstration purposes, let's assume a hardcoded list of animals
-    println!("->>  {:<12} - handler_search", "HANDLER");
-    let available_animals = vec!["dog", "cat", "rabbit", "lion"];
-
+///This function search for an animal given a name with the Animal API
+async fn search_animal(name: &str) -> Result<String, StatusCode> {
 
     let client = reqwest::Client::new();
 
@@ -115,9 +120,7 @@ pub async fn handler_search(Json(body): Json<AnimalQuery>) -> Result<String, Sta
     let mut headers = HeaderMap::new();
     headers.insert("X-Api-Key", HeaderValue::from_str(API_KEY).unwrap());
 
-    //Construct the final url by adding the name of the species to API url:
-    let species = &*body.species.to_lowercase();
-    let url = [ANIMAL_URL, species].concat();
+    let url = [ANIMAL_URL, name].concat();
     println!("{}", url);
 
     //Call the api
@@ -137,8 +140,48 @@ pub async fn handler_search(Json(body): Json<AnimalQuery>) -> Result<String, Sta
     println!("{}", body);
     if body == "[]" {
         println!("Empty response body");
-        return Err(StatusCode::NOT_FOUND)
     }
 
     Ok(body)
+}
+
+/// This function takes a name of an animal in the Json request and
+/// call the Animal API to get information about that animal
+pub async fn handler_search(Json(body): Json<AnimalQuery>) -> Result<String, StatusCode> {
+
+    //Construct the final url by adding the name of the species to API url:
+    let species = &*body.species.to_lowercase();
+
+    let body = search_animal(species).await;
+
+    match body {
+        Ok(body) => return Ok(body),
+        Err(e) => Err(e)
+    }
+}
+
+///This function calls the Animal API to get a random animal
+pub async fn handler_random() -> Result<String, StatusCode> {
+    let animal = read_random_record("./src/data/animals.csv");
+    let mut name = String::new();
+    match animal.await {
+        Ok(record) => {
+            println!("{:?}", record);
+            let my_struct: AnimalRecord = record.deserialize(None).unwrap();
+            println!("{:?}", my_struct);
+            name = record.get(0).unwrap().to_string();
+        }
+        _ => {
+            eprintln!("Error reading CSV file");
+        }
+    }
+
+
+    let res = search_animal(name.as_str()).await;
+
+    match res {
+        Ok(body) => return Ok(body),
+        Err(e) => Err(e)
+    }
+
 }
