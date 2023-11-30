@@ -70,14 +70,14 @@ pub struct Animal {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct AnimalResponse {
-    pub name: String,
-    pub scientific_name: String,
+    pub name: Option<String>,
+    pub scientific_name: Option<String>,
     pub locations: Vec<String>,
-    pub prey: String,
-    pub diet: String,
-    pub r#type: String,
-    pub color: String,
-    pub lifespan: String,
-    pub weight: String,
+    pub prey: Option<String>,
+    pub diet: Option<String>,
+    pub r#type: Option<String>,
+    pub color: Option<String>,
+    pub lifespan: Option<String>,
+    pub weight: Option<String>,
     pub img_url: String
 }
