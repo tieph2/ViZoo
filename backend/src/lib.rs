@@ -4,7 +4,6 @@ use serde::{Deserialize, Serialize};
 pub struct AnimalQuery {
     pub species: String,
 }
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AnimalRecord {
     name: String,
@@ -34,7 +33,6 @@ pub struct Taxonomy {
     pub genus: Option<String>,
     pub scientific_name: Option<String>,
 }
-
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Characteristics {
     pub prey: Option<String>,
@@ -58,7 +56,6 @@ pub struct Characteristics {
     pub height: Option<String>,
     pub average_litter_size: Option<String>,
 }
-
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Animal {
     pub name: Option<String>,
@@ -66,7 +63,6 @@ pub struct Animal {
     pub locations: Vec<String>,
     pub characteristics: Characteristics,
 }
-
 #[derive(Debug, Deserialize, Serialize)]
 pub struct AnimalResponse {
     pub name: Option<String>,

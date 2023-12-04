@@ -1,16 +1,12 @@
 use axum::{
     http::StatusCode,
     response::{Html, IntoResponse},
-    Json
+    Json,
 };
-
-use reqwest::{
-    header::{HeaderMap, HeaderValue}
-};
-
 use csv::Reader;
 use image_search::{urls, Arguments};
 use rand::Rng;
+use reqwest::header::{HeaderMap, HeaderValue};
 use std::fs::File;
 use vi_zoo::{Animal, AnimalQuery, AnimalResponse};
 
@@ -32,7 +28,6 @@ pub async fn handler_hello() -> impl IntoResponse {
     println!("->>  {:<12} - handler_hello", "HANDLER");
     Html("Hello <strong> World!!!</strong>")
 }
-
 
 ///This function opens a CSV file, reads it then return a random record representing an animal
 async fn read_random_record(

@@ -1,11 +1,9 @@
 mod handlers;
 mod routes;
+use crate::routes::routes;
 use anyhow::Result as AnyResult;
 use std::net::SocketAddr;
-use tracing::log::{info};
-
-
-use crate::routes::routes;
+use tracing::log::info;
 
 #[tokio::main]
 async fn main() -> AnyResult<()> {
