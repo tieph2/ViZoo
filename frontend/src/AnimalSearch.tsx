@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {getAnimalFromServer, httpClient} from './HttpService'
+import {getAnimalFromServer, getRandomAnimal, httpClient} from './HttpService'
 import axios from 'axios';
 import animalResult from "./AnimalResult";
 import AnimalCard from "./AnimalCard";
@@ -19,6 +19,16 @@ const AnimalSearch = () => {
             .catch((err) => console.log("Error in fetch animals", err));
     };
 
+    const fetchRandom = async () => {
+        console.log("Calling API")
+        await getRandomAnimal()
+            .then((response) =>
+            {
+                console.log("Got animal", response);
+                setSearchResults(response)
+            })
+            .catch((err) => console.log("Error in fetch animals", err));
+    };
     useEffect(() => {
         (async () => {
             await fetchAnimal();
@@ -39,6 +49,9 @@ const AnimalSearch = () => {
                 />
                 <button onClick={fetchAnimal} className="custom-button">
                     Search
+                </button>
+                <button onClick={fetchRandom} className="custom-button">
+                    Random!
                 </button>
             </div>
 

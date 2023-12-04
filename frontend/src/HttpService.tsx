@@ -29,3 +29,8 @@ export async function getAnimalFromServer(species: any) {
     const id = await httpClient.request(get_id_config);
     return id.data;
 }
+
+export async function getRandomAnimal() {
+    const profile = await httpClient.get("/random");
+    return profile.data;
+}

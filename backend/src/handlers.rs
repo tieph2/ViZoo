@@ -1,29 +1,20 @@
 use axum::{
-    extract::Query,
     http::StatusCode,
     response::{Html, IntoResponse},
-    routing::{get, post},
-    Extension, Json, Router,
+    Json
 };
 
 use reqwest::{
-    header::{HeaderMap, HeaderValue},
-    Client, ClientBuilder, Error as RError,
+    header::{HeaderMap, HeaderValue}
 };
 
 use csv::Reader;
-use image_search::{download, search, urls, Arguments, Color};
+use image_search::{urls, Arguments};
 use rand::Rng;
-use select::document::Document;
-use select::predicate::Name;
-use serde::{Deserialize, Serialize};
-use std::error;
 use std::fs::File;
-use std::path::Path;
-use vi_zoo::{Animal, AnimalQuery, AnimalRecord, AnimalResponse};
+use vi_zoo::{Animal, AnimalQuery, AnimalResponse};
 
 const ANIMAL_URL: &str = "https://api.api-ninjas.com/v1/animals?name=";
-const CAT_URL: &str = "https://catfact.ninja/fact";
 const API_KEY: &str = "LX8eq5FkHB438N3K7ukLCw==DQTKEHV5lLP5rVtO";
 
 ///This function get the url of the first result returned by google image search.
@@ -42,25 +33,8 @@ pub async fn handler_hello() -> impl IntoResponse {
     Html("Hello <strong> World!!!</strong>")
 }
 
-///This function calls the Random Cat API (for testing purpose)
-pub async fn handler_rand_cat() -> Result<String, StatusCode> {
-    let client = reqwest::Client::new();
 
-    // Replace the URL below with the actual endpoint you want to call
-    let response = client
-        .get(CAT_URL)
-        .send()
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-
-    let body = response
-        .text()
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-
-    Ok(body)
-}
-
+///This function opens a CSV file, reads it then return a random record representing an animal
 async fn read_random_record(
     file_path: &str,
 ) -> Result<csv::StringRecord, Box<dyn std::error::Error>> {
@@ -128,7 +102,7 @@ async fn search_animal(name: &str) -> Result<String, StatusCode> {
 }
 
 /// This function takes a name of an animal in the Json request and
-/// call the Animal API to get information about that animal
+/// calls the Animal API to get information about that animal
 pub async fn handler_search(Json(body): Json<AnimalQuery>) -> Result<String, StatusCode> {
     //Construct the final url by adding the name of the species to API url:
     let species = &*body.species.to_lowercase();
@@ -136,16 +110,14 @@ pub async fn handler_search(Json(body): Json<AnimalQuery>) -> Result<String, Sta
     let result = search_animal(species).await;
 
     match result {
-        Ok(body) => {
-            return Ok(parse_result(body).await?)
-        }
+        Ok(body) => Ok(parse_result(body).await?),
         Err(e) => Err(e),
     }
 }
 
 ///This function calls the Animal API to get a random animal
 pub async fn handler_random() -> Result<String, StatusCode> {
-    let mut result : Result<String,StatusCode> =
+    let result : Result<String,StatusCode> =
         //Continuously loop through random animal in the CSV database until a match in the
         // Animal API is found
         loop {
@@ -153,7 +125,6 @@ pub async fn handler_random() -> Result<String, StatusCode> {
             let mut name = String::new();
             match animal.await {
                 Ok(record) => {
-                    let my_struct: AnimalRecord = record.deserialize(None).unwrap();
                     name = record.get(0).unwrap().to_string();
                 }
                 _ => {
@@ -169,14 +140,12 @@ pub async fn handler_random() -> Result<String, StatusCode> {
         };
 
     match result {
-        Ok(body) => {
-            return Ok(parse_result(body).await?)
-        }
+        Ok(body) => Ok(parse_result(body).await?),
         Err(e) => Err(e),
     }
 }
 
-///This function parse the result from the API call.
+///This function parses the result from the API call into a JSON response.
 async fn parse_result(body: String) -> Result<String, StatusCode> {
     let animals: Vec<Animal> =
         serde_json::from_str(body.as_str()).expect("Failed to deserialize JSON");
@@ -188,10 +157,10 @@ async fn parse_result(body: String) -> Result<String, StatusCode> {
         }
     }
     let json_body = serde_json::to_string(&response).expect("Failed to serialize");
-    return Ok(json_body);
+    Ok(json_body)
 }
 
-///This function parse the animal from the API call result to get the necessary info
+///This function parses the animal from the API call result to get the necessary info
 async fn parse_animal(animal: &Animal) -> Result<AnimalResponse, Box<dyn std::error::Error>> {
     println!("Getting url");
     let url = get_url(animal.name.clone().unwrap()).await?;
