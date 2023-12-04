@@ -15,6 +15,9 @@ use axum::{
 
 use crate::routes::routes;
 use reqwest::blocking::{Client, ClientBuilder};
+//use tower_http::cors::{Any, CorsLayer};
+
+
 
 #[tokio::main]
 async fn main() -> AnyResult<()> {
@@ -23,8 +26,13 @@ async fn main() -> AnyResult<()> {
     Ok(())
 }
 
+
+
 async fn run() -> AnyResult<()> {
     let app = routes();
+
+
+
     let addr = SocketAddr::from(([127, 0, 0, 1], 8080));
     info!("Listening on {}", &addr);
 

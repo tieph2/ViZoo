@@ -1,32 +1,33 @@
 use axum::{
-    http::StatusCode, extract::Query,
+    extract::Query,
+    http::StatusCode,
     response::{Html, IntoResponse},
     routing::{get, post},
     Extension, Json, Router,
 };
 
 use reqwest::{
-    Client,
-    ClientBuilder,
-    Error as RError,
     header::{HeaderMap, HeaderValue},
+    Client, ClientBuilder, Error as RError,
 };
 
 use csv::Reader;
+use image_search::{download, search, urls, Arguments, Color};
 use rand::Rng;
 use select::document::Document;
 use select::predicate::Name;
+use serde::{Deserialize, Serialize};
 use std::error;
 use std::fs::File;
 use std::path::Path;
-use vi_zoo::{AnimalQuery, AnimalRecord, Animal, AnimalResponse};
-use serde::{Deserialize, Serialize};
-use image_search::{Arguments, Color, urls, search, download};
+use vi_zoo::{Animal, AnimalQuery, AnimalRecord, AnimalResponse};
 
 const ANIMAL_URL: &str = "https://api.api-ninjas.com/v1/animals?name=";
 const CAT_URL: &str = "https://catfact.ninja/fact";
-const API_KEY : &str = "LX8eq5FkHB438N3K7ukLCw==DQTKEHV5lLP5rVtO";
+const API_KEY: &str = "LX8eq5FkHB438N3K7ukLCw==DQTKEHV5lLP5rVtO";
 
+///This function get the url of the first result returned by google image search.
+///The argument is a String representing the search query.
 async fn get_url(animal: String) -> Result<String, image_search::Error> {
     let args = Arguments::new(animal.as_str(), 10);
     let _image_urls = urls(args.clone()).await?;
@@ -43,9 +44,7 @@ pub async fn handler_hello() -> impl IntoResponse {
 
 ///This function calls the Random Cat API (for testing purpose)
 pub async fn handler_rand_cat() -> Result<String, StatusCode> {
-
     let client = reqwest::Client::new();
-
 
     // Replace the URL below with the actual endpoint you want to call
     let response = client
@@ -62,7 +61,9 @@ pub async fn handler_rand_cat() -> Result<String, StatusCode> {
     Ok(body)
 }
 
-async fn read_random_record(file_path: &str) -> Result<csv::StringRecord, Box<dyn std::error::Error>> {
+async fn read_random_record(
+    file_path: &str,
+) -> Result<csv::StringRecord, Box<dyn std::error::Error>> {
     // Open the CSV file
     let file = File::open(file_path)?;
 
@@ -75,7 +76,6 @@ async fn read_random_record(file_path: &str) -> Result<csv::StringRecord, Box<dy
     // Generate a random index within the range of records
     let mut rng = rand::thread_rng();
     let random_index = rng.gen_range(0..records.len());
-
 
     for result in reader.records() {
         // Handle each CSV record
@@ -95,11 +95,8 @@ async fn read_random_record(file_path: &str) -> Result<csv::StringRecord, Box<dy
     Ok(records[random_index].clone()) // Cloning the record to return it
 }
 
-
-
 ///This function search for an animal given a name with the Animal API
 async fn search_animal(name: &str) -> Result<String, StatusCode> {
-
     let client = reqwest::Client::new();
 
     //Construct the header for the request with the API key
@@ -133,22 +130,21 @@ async fn search_animal(name: &str) -> Result<String, StatusCode> {
 /// This function takes a name of an animal in the Json request and
 /// call the Animal API to get information about that animal
 pub async fn handler_search(Json(body): Json<AnimalQuery>) -> Result<String, StatusCode> {
-
     //Construct the final url by adding the name of the species to API url:
     let species = &*body.species.to_lowercase();
 
-    let body = search_animal(species).await;
+    let result = search_animal(species).await;
 
-    match body {
-        Ok(body) => return Ok(body),
-        Err(e) => Err(e)
+    match result {
+        Ok(body) => {
+            return Ok(parse_result(body).await?)
+        }
+        Err(e) => Err(e),
     }
 }
 
 ///This function calls the Animal API to get a random animal
 pub async fn handler_random() -> Result<String, StatusCode> {
-
-
     let mut result : Result<String,StatusCode> =
         //Continuously loop through random animal in the CSV database until a match in the
         // Animal API is found
@@ -174,28 +170,33 @@ pub async fn handler_random() -> Result<String, StatusCode> {
 
     match result {
         Ok(body) => {
-            let animals : Vec<Animal> = serde_json::from_str(body.as_str()).expect("Failed to deserialize JSON");
-            let mut response : Vec<AnimalResponse> = Vec::new();
-            for animal in animals {
-                let res = parse_animal(&animal).await;
-                if let Ok(animal) = res {
-                    response.push(animal);
-                }
-            }
-            let json_body = serde_json::to_string(&response).expect("Failed to serialize");
-            return Ok(json_body)
-        },
-        Err(e) => Err(e)
+            return Ok(parse_result(body).await?)
+        }
+        Err(e) => Err(e),
     }
-
 }
 
-async fn parse_animal(animal : &Animal) -> Result<AnimalResponse, Box<dyn std::error::Error>> {
+///This function parse the result from the API call.
+async fn parse_result(body: String) -> Result<String, StatusCode> {
+    let animals: Vec<Animal> =
+        serde_json::from_str(body.as_str()).expect("Failed to deserialize JSON");
+    let mut response: Vec<AnimalResponse> = Vec::new();
+    for animal in animals {
+        let res = parse_animal(&animal).await;
+        if let Ok(animal) = res {
+            response.push(animal);
+        }
+    }
+    let json_body = serde_json::to_string(&response).expect("Failed to serialize");
+    return Ok(json_body);
+}
 
+///This function parse the animal from the API call result to get the necessary info
+async fn parse_animal(animal: &Animal) -> Result<AnimalResponse, Box<dyn std::error::Error>> {
     println!("Getting url");
     let url = get_url(animal.name.clone().unwrap()).await?;
 
-    let response = AnimalResponse  {
+    let response = AnimalResponse {
         name: animal.name.clone(),
         scientific_name: animal.taxonomy.scientific_name.clone(),
         locations: animal.locations.clone(),
@@ -205,7 +206,7 @@ async fn parse_animal(animal : &Animal) -> Result<AnimalResponse, Box<dyn std::e
         color: animal.characteristics.color.clone(),
         lifespan: animal.characteristics.lifespan.clone(),
         weight: animal.characteristics.weight.clone(),
-        img_url:  url
+        img_url: url,
     };
     Ok(response)
 }

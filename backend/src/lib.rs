@@ -22,7 +22,7 @@ pub struct AnimalRecord {
     gestation_period: String,
     top_speed: String,
     social_structure: String,
-    offsprings: String
+    offsprings: String,
 }
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Taxonomy {
@@ -32,7 +32,7 @@ pub struct Taxonomy {
     pub order: Option<String>,
     pub family: Option<String>,
     pub genus: Option<String>,
-    pub scientific_name: Option<String>
+    pub scientific_name: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -67,7 +67,6 @@ pub struct Animal {
     pub characteristics: Characteristics,
 }
 
-
 #[derive(Debug, Deserialize, Serialize)]
 pub struct AnimalResponse {
     pub name: Option<String>,
@@ -79,5 +78,5 @@ pub struct AnimalResponse {
     pub color: Option<String>,
     pub lifespan: Option<String>,
     pub weight: Option<String>,
-    pub img_url: String
+    pub img_url: String,
 }
