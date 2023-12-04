@@ -21,7 +21,7 @@ A website to learn about the animal kingdom, made with Rust and React.
 
 ## License
 
-[LICENSE](LICENSE)
+[LICENSE](LICENSE.md)
 
 ## Project Summary
 ViZoo provides a simple interface to learn about the animal world. Users can look up any species to learn more about their habitat, diets, locations, and other fun information. The backend is built entirely in Rust. For the front-end, I decided to go with the React framework to cut down on development time. This project was challenging as a beginner in Rust. Aside the usual obstacle in working with Rust compiler, I had to learn about the different Rust crates that my project needed.
