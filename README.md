@@ -3,6 +3,7 @@
 A website to learn about the animal kingdom, made with Rust and React.
 
 ![Example result](screenshot.png)
+![Example result](screenshot2.png)
 
 
 ## How to run ViZoo:
