@@ -1,7 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {getAnimalFromServer, getRandomAnimal, httpClient} from './HttpService'
-import axios from 'axios';
-import animalResult from "./AnimalResult";
+import {getAnimalFromServer, getRandomAnimal} from './HttpService'
 import AnimalCard from "./AnimalCard";
 
 const AnimalSearch = () => {
@@ -55,7 +53,7 @@ const AnimalSearch = () => {
                 </button>
             </div>
 
-            <div class={"result"}>
+            <div className={"result"}>
                 {searchResults ? searchResults.map(item => (
                     <AnimalCard searchResult={item} />
                     )) : (
